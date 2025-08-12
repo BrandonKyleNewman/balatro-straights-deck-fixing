@@ -92,14 +92,15 @@ class Game:
     
     def take_action(self, discards_remaining):
         index_straight = -1
-        for i in range(len(self.hand)):
+        for i in range(len(self.hand)-4):
             if self.is_straight_starting_at_s_i(i):
                 index_straight = i
         if index_straight != -1:
             score = 0
             for i in range(5):
-                score += self.hand[index_straight+i].rank
-            self.final_score += score
+                score += (self.hand[index_straight+i].rank + 30)
+            self.final_score += (score*4)
+            print("straight at " + str(index_straight) + "! " + str(self.hand) )
             self.hand = self.hand[:index_straight] + self.hand[index_straight+5:]
             return "play"
         else:
@@ -119,9 +120,7 @@ class Game:
                 return "play"
 
     def is_straight_starting_at_s_i(self, s_i):
-        if not (s_i+4 < len(self.hand)):
-            return False
-        return self.hand[s_i] < self.hand[s_i+1] < self.hand[s_i+2] < self.hand[s_i+3] < self.hand[s_i+4]
+        return self.hand[s_i+1].rank == self.hand[s_i].rank +1 and self.hand[s_i+2].rank == self.hand[s_i].rank+2 and self.hand[s_i+3].rank == self.hand[s_i].rank+3 and self.hand[s_i+4].rank == self.hand[s_i].rank+4
 
 
 def generate_n_decks(n):
