@@ -64,6 +64,7 @@ class Game:
         self.hand = []
         self.deck = None
         self.final_score = 0
+        self.all_actions = []
     
     def play_game(self):
         self.reset_game()
@@ -72,12 +73,12 @@ class Game:
         while hands_remaining:
             self.replenish_hand()
             self.hand.sort()
-            print(self.hand)
-            action_taken = self.take_action(discards_remaining)
-            if action_taken == "play":
+            action_taken = self.take_action(discards_remaining, "discard randomly")
+            if action_taken[0] == "play":
                 hands_remaining -= 1
             else:
                 discards_remaining -= 1
+            self.all_actions.append(action_taken)
     
     def reset_game(self):
         self.hand = []
@@ -90,7 +91,7 @@ class Game:
             if card:
                 self.hand.append(card)
     
-    def take_action(self, discards_remaining):
+    def take_action(self, discards_remaining, strategy):
         index_straight = -1
         for i in range(len(self.hand)-4):
             if self.is_straight_starting_at_s_i(i):
@@ -100,25 +101,42 @@ class Game:
             for i in range(5):
                 score += (self.hand[index_straight+i].rank + 30)
             self.final_score += (score*4)
-            print("straight at " + str(index_straight) + "! " + str(self.hand) )
+            action_taken = ["play","no","yes",score*4]
             self.hand = self.hand[:index_straight] + self.hand[index_straight+5:]
-            return "play"
+            return action_taken
         else:
             if discards_remaining:
-                idxes_to_discard = enact_strategy("discard randomly")
+                idxes_to_discard = self.enact_strategy(strategy)
                 for i in range(len(idxes_to_discard)-1,-1,-1):
                     del self.hand[i]
-                return "discard"
+                return ["discard","no","no",0]
             else:
-                idxes_to_discard = enact_strategy("discard randomly")
+                idxes_to_discard = self.enact_strategy(strategy)
                 for i in range(len(idxes_to_discard)-1,-1,-1):
                     del self.hand[i]
-                return "play"
-
+                self.final_score += 5
+                return ["play","yes","no",5]
+        
     def is_straight_starting_at_s_i(self, s_i):
         return self.hand[s_i+1].rank == self.hand[s_i].rank +1 and self.hand[s_i+2].rank == self.hand[s_i].rank+2 and self.hand[s_i+3].rank == self.hand[s_i].rank+3 and self.hand[s_i+4].rank == self.hand[s_i].rank+4
-
-
+    
+    def enact_strategy(self,strategy):
+        idxes_to_discard = set()
+        def discard_randomly():
+            if len(self.hand) > 5:
+                num_to_discard = random.randint(1,5)
+            else:
+                num_to_discard = len(self.hand)
+            while num_to_discard:
+                idx_to_discard = random.randint(0,len(self.hand)-1)
+                if idx_to_discard not in idxes_to_discard:
+                    idxes_to_discard.add(idx_to_discard)
+                    num_to_discard -= 1
+        if strategy == "discard randomly":
+            discard_randomly()
+        else:
+            None
+        return list(idxes_to_discard)
 
 def generate_n_decks(n):
     all_decks = []
@@ -131,23 +149,15 @@ def generate_n_decks(n):
         all_decks.append(curr_deck)
     return all_decks
 
-def enact_strategy(self, strategy):
-    idxes_to_discard = set()
-    def discard_randomly():
-        num_to_discard = random.randint(1,min(5,len(self.hand)))
-        while num_to_discard:
-            idx_to_discard = random.randint(0,len(self.hand)-1)
-            if idx_to_discard not in idxes_to_discard:
-                idxes_to_discard.add(idxes_to_discard)
-                num_to_discard -= 1
-    if strategy == "discard randomly":
-        discard_randomly()
-    else:
-        None
-    return list(idxes_to_discard)
-
 test_deck = generate_n_decks(1)[0]
 for _ in range(100):
     g = Game(test_deck,4,2,8)
     g.play_game()
-    print(g.final_score)
+    print(g.final_score, g.all_actions)
+
+
+# most likely to be a straight
+# [4,5,6,7,8] is a straight
+# [4,4,6,7,8] one away from a straight, non-consequtive
+# [4,5,6,7,9] one away from a straight, consequtive
+# 
