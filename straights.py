@@ -105,22 +105,19 @@ class Game:
             return "play"
         else:
             if discards_remaining:
-                num_to_discard = random.randint(1,min(5,len(self.hand)))
-                while num_to_discard:
-                    del self.hand[random.randint(0,len(self.hand)-1)]
-                    num_to_discard -= 1
+                idxes_to_discard = enact_strategy("discard randomly")
+                for i in range(len(idxes_to_discard)-1,-1,-1):
+                    del self.hand[i]
                 return "discard"
             else:
-                num_to_discard = random.randint(1,min(5,len(self.hand)))
-                while num_to_discard:
-                    idx = random.randint(0,len(self.hand)-1)
-                    self.final_score += self.hand[idx].rank
-                    del self.hand[idx]
-                    num_to_discard -= 1
+                idxes_to_discard = enact_strategy("discard randomly")
+                for i in range(len(idxes_to_discard)-1,-1,-1):
+                    del self.hand[i]
                 return "play"
 
     def is_straight_starting_at_s_i(self, s_i):
         return self.hand[s_i+1].rank == self.hand[s_i].rank +1 and self.hand[s_i+2].rank == self.hand[s_i].rank+2 and self.hand[s_i+3].rank == self.hand[s_i].rank+3 and self.hand[s_i+4].rank == self.hand[s_i].rank+4
+
 
 
 def generate_n_decks(n):
@@ -134,6 +131,20 @@ def generate_n_decks(n):
         all_decks.append(curr_deck)
     return all_decks
 
+def enact_strategy(self, strategy):
+    idxes_to_discard = set()
+    def discard_randomly():
+        num_to_discard = random.randint(1,min(5,len(self.hand)))
+        while num_to_discard:
+            idx_to_discard = random.randint(0,len(self.hand)-1)
+            if idx_to_discard not in idxes_to_discard:
+                idxes_to_discard.add(idxes_to_discard)
+                num_to_discard -= 1
+    if strategy == "discard randomly":
+        discard_randomly()
+    else:
+        None
+    return list(idxes_to_discard)
 
 test_deck = generate_n_decks(1)[0]
 for _ in range(100):
