@@ -1,1 +1,3 @@
-I was going to try and simulate a crap load of Balatro games to determine what is the best strategies for playing straights. Turns out you 
+I was going to run simulations of Balatro to determine the best strategy for playing straights. Turns out you just need to think about the distribution that each card appears in a straight, ex. Ace appears in two straights (A 2 3 4 5, 10 J Q K A), while 8 appears in (4	5	6	7	8, 5 6 7 8 9, 6	7	8	9	10, 7	8	9	10 J, 8	9	10 J Q). Since it's generally a good strategy to maximize the number of straights you play (although not always for Balatro!), you therefore want to trim the cards that appears in the least amount of straights. QED.
+
+Keeping around mostly because the card logic is something I can play with in the future.
