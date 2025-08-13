@@ -71,7 +71,9 @@ class Game:
         hands_remaining = self.max_hands
         discards_remaining = self.max_discards
         while hands_remaining:
-            self.replenish_hand()
+            was_hand_replenish_successful = self.replenish_hand()
+            if not was_hand_replenish_successful:
+                break
             self.hand.sort()
             action_taken = self.take_action(discards_remaining, "discard randomly")
             if action_taken[0] == "play":
@@ -90,43 +92,65 @@ class Game:
             card = self.deck.draw_card()
             if card:
                 self.hand.append(card)
+            else:
+                return False
+        return True
     
     def take_action(self, discards_remaining, strategy):
-        index_straight = -1
-        for i in range(len(self.hand)-4):
-            if self.is_straight_starting_at_s_i(i):
-                index_straight = i
-        if index_straight != -1:
-            score = 0
-            for i in range(5):
-                score += (self.hand[index_straight+i].rank + 30)
+        initial_hand = deepcopy(self.hand)
+        played_straight = self.can_play_straight()
+        if played_straight:
+            score = 30
+            played_cards = []
+            for idx in played_straight:
+                score += self.hand[idx].rank
+                played_cards.append(self.hand[idx])
+                del self.hand[idx]
             self.final_score += (score*4)
-            action_taken = ["play","no","yes",score*4]
-            self.hand = self.hand[:index_straight] + self.hand[index_straight+5:]
-            return action_taken
+            res = str(("play","yes", score*4, played_straight, played_cards, initial_hand, self.hand))
+            return res
         else:
+            cards = []
             if discards_remaining:
                 idxes_to_discard = self.enact_strategy(strategy)
                 for i in range(len(idxes_to_discard)-1,-1,-1):
+                    cards.append(self.hand[i])
                     del self.hand[i]
-                return ["discard","no","no",0]
+                res = str(("discard","no","no",0, cards, initial_hand, self.hand))
+                return res
             else:
                 idxes_to_discard = self.enact_strategy(strategy)
                 for i in range(len(idxes_to_discard)-1,-1,-1):
+                    cards.append(self.hand[i])
                     del self.hand[i]
                 self.final_score += 5
-                return ["play","yes","no",5]
+                res = str(("play","no",5, cards, initial_hand, self.hand))
+                return res
+
+#vector: [play or discard, is straight, value, cards_acted_on]
         
-    def is_straight_starting_at_s_i(self, s_i):
-        return self.hand[s_i+1].rank == self.hand[s_i].rank +1 and self.hand[s_i+2].rank == self.hand[s_i].rank+2 and self.hand[s_i+3].rank == self.hand[s_i].rank+3 and self.hand[s_i+4].rank == self.hand[s_i].rank+4
-    
+    def can_play_straight(self):
+        hand_catalog = {}
+        for i,card in enumerate(self.hand):
+            if card.rank not in hand_catalog:
+                hand_catalog[card.rank] = []
+            hand_catalog[card.rank].append(i)
+        for i in range(14,1,-1):
+            play_hand = []
+            for j in range(5):
+                if i-j in hand_catalog:
+                    play_hand.append(hand_catalog[i-j][0])
+                if len(play_hand) == 5:
+                    return play_hand
+        return []
+
     def enact_strategy(self,strategy):
         idxes_to_discard = set()
         def discard_randomly():
             if len(self.hand) > 5:
                 num_to_discard = random.randint(1,5)
             else:
-                num_to_discard = len(self.hand)
+                num_to_discard = random.randint(1,len(self.hand))
             while num_to_discard:
                 idx_to_discard = random.randint(0,len(self.hand)-1)
                 if idx_to_discard not in idxes_to_discard:
@@ -149,15 +173,28 @@ def generate_n_decks(n):
         all_decks.append(curr_deck)
     return all_decks
 
-test_deck = generate_n_decks(1)[0]
-for _ in range(100):
-    g = Game(test_deck,4,2,8)
-    g.play_game()
-    print(g.final_score, g.all_actions)
+def run_simulation():
+    test_deck = generate_n_decks(1)[0]
+    results = {}
+    for _ in range(1000):
+        g = Game(test_deck,4,2,8)
+        g.play_game()
+        if g.final_score not in results:
+            results[g.final_score] = []
+        results[g.final_score].append(g.all_actions)
 
-
+    print(results.keys())
+    for score in range(1500,200,-1):
+        if score in results:
+            print(score)
+            for elem in results[score]:
+                for s_elem in elem:
+                    print(s_elem)
+                print("")
+            print("------------")
+            
+run_simulation()
 # most likely to be a straight
 # [4,5,6,7,8] is a straight
 # [4,4,6,7,8] one away from a straight, non-consequtive
 # [4,5,6,7,9] one away from a straight, consequtive
-# 
